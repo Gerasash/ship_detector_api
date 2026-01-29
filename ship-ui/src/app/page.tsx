@@ -1,7 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+
+type Ship = {
+  class: string;
+  conf: number;
+  bbox: [number, number, number, number];
+};
 
 type ApiResult = {
   success: boolean;
@@ -9,12 +15,7 @@ type ApiResult = {
   results: {
     total_ships: number;
     has_ships: boolean;
-    ships?: Array<{
-      class: string;
-      conf: number;
-      bbox: number[];
-    }>;
-    // для видео:
+    ships?: Ship[];
     total_frames?: number;
     frames_with_ships?: number;
     max_ships_per_frame?: number;
@@ -31,6 +32,8 @@ export default function Home() {
   const [result, setResult] = useState<ApiResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -75,6 +78,52 @@ export default function Home() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    if (!result || !result.results.ships || mode !== "image" || !preview)
+      return;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const img = new Image();
+    img.src = preview;
+
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+
+      result.results.ships!.forEach((ship) => {
+        const [x1, y1, x2, y2] = ship.bbox;
+        const w = x2 - x1;
+        const h = y2 - y1;
+
+        ctx.strokeStyle = "#00ff00";
+        ctx.lineWidth = 4;
+        ctx.strokeRect(x1, y1, w, h);
+
+        const label = `${ship.class} ${(ship.conf * 100).toFixed(0)}%`;
+        ctx.font = "bold 18px Arial";
+        const textWidth = ctx.measureText(label).width;
+
+        ctx.fillStyle = "rgba(0, 255, 0, 0.8)";
+        ctx.fillRect(x1, y1 > 25 ? y1 - 25 : y1, textWidth + 10, 25);
+
+        ctx.fillStyle = "#000";
+        ctx.fillText(label, x1 + 5, y1 > 25 ? y1 - 7 : y1 + 18);
+      });
+    };
+
+    if (img.complete) {
+      img.onload(null as any);
+    }
+  }, [result, preview, mode]);
 
   return (
     <main
@@ -155,16 +204,15 @@ export default function Home() {
         </button>
       </div>
 
-      {preview && (
+      {result && mode === "image" && result.results.ships && (
         <div style={{ marginTop: 24 }}>
-          <h3>Превью:</h3>
-          <img
-            src={preview}
-            alt="preview"
+          <h3>Детекция:</h3>
+          <canvas
+            ref={canvasRef}
             style={{
               maxWidth: "100%",
-              maxHeight: 400,
-              border: "1px solid #ddd",
+              border: "2px solid #0070f3",
+              borderRadius: 4,
             }}
           />
         </div>
@@ -238,21 +286,6 @@ export default function Home() {
               </p>
             </>
           )}
-
-          <details style={{ marginTop: 12 }}>
-            <summary>JSON (полный)</summary>
-            <pre
-              style={{
-                background: "#fff",
-                padding: 12,
-                border: "1px solid #ddd",
-                overflowX: "auto",
-                fontSize: 12,
-              }}
-            >
-              {JSON.stringify(result, null, 2)}
-            </pre>
-          </details>
         </div>
       )}
     </main>
