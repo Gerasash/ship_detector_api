@@ -19,7 +19,7 @@ class ShipDetector:
         names = res.names
         for b in res.boxes:
             cls_id = int(b.cls[0])
-            cls_name = names[cls_id]  # для твоего датасета обычно "ship"
+            cls_name = names[cls_id]
             x1, y1, x2, y2 = map(float, b.xyxy[0])
             ships.append({"class": cls_name, "conf": float(b.conf[0]), "bbox": [x1, y1, x2, y2]})
 
