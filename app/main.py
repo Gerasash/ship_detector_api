@@ -53,12 +53,10 @@ async def detect_video(file: UploadFile = File(...)):
 async def ws_stream(websocket: WebSocket):
     await websocket.accept()
     # Это “контрольный” стрим: клиент шлёт JPEG кадры, сервер отвечает детекцией.
-    # Так проще всего под Next.js, чем лезть в VideoCapture с сервера.
     try:
         while True:
             frame_bytes = await websocket.receive_bytes()
             results = detector.detect_image_bytes(frame_bytes)
             await websocket.send_json(results)
     except Exception:
-        # клиент закрылся — выходим молча
         return

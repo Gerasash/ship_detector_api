@@ -3,7 +3,8 @@ import numpy as np
 import cv2
 
 class ShipDetector:
-    def __init__(self, weights_path=r"runs\detect\runs\detect\ships_kaggle_v5_fast2\weights\best.pt", device=0, conf=0.35):
+
+    def __init__(self, weights_path=r"runs\detect\runs\detect\ships_kaggle_v5_fast2\weights\best.pt", device=0, conf=0.5):
         self.model = YOLO(weights_path)
         self.device = device
         self.conf = conf

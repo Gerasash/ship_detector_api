@@ -221,7 +221,7 @@ export default function Home() {
       )}
 
       {/* Превью для видео */}
-      {preview && mode === "video" && !result && (
+      {preview && mode === "video" && (
         <div style={{ marginTop: 24 }}>
           <h3>Превью видео:</h3>
           <video
@@ -318,10 +318,6 @@ export default function Home() {
               <p>
                 <strong>Максимум кораблей в одном кадре:</strong>{" "}
                 {result.results.max_ships_per_frame}
-              </p>
-              <p>
-                <strong>Среднее количество кораблей:</strong>{" "}
-                {result.results.avg_ships_per_frame}
               </p>
               <p>
                 <strong>Всего детекций:</strong>{" "}

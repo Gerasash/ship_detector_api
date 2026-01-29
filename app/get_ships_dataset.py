@@ -10,10 +10,8 @@ if __name__ == '__main__':
     
     # Ships датасет (Roboflow или Ultralytics)
     model.train(
-        data="https://github.com/ultralytics/assets/releases/download/v8.3.0/ships.zip",  # пример
+        data="https://github.com/ultralytics/assets/releases/download/v8.3.0/ships.zip",
         epochs=1,  # только скачивание
         project="dataset",
         name="ships"
     )
-    
-    print("✅ Датасет готов! dataset/ships/data.yaml")
