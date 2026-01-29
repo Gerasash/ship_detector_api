@@ -44,7 +44,7 @@ async def detect_video(file: UploadFile = File(...)):
         tmp_path = tmp.name
 
     try:
-        results = detector.analyze_video_file(tmp_path, max_frames=300)  # ограничение для скорости
+        results = detector.analyze_video_file(tmp_path, sample_rate=5, max_frames=300)  # ограничение для скорости
         return {"success": True, "processing_time": round(time.time() - start, 3), "results": results}
     finally:
         os.remove(tmp_path)

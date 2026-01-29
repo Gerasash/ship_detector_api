@@ -16,9 +16,12 @@ type ApiResult = {
     total_ships: number;
     has_ships: boolean;
     ships?: Ship[];
-    total_frames?: number;
+    // для видео:
+    total_frames_processed?: number;
     frames_with_ships?: number;
     max_ships_per_frame?: number;
+    avg_ships_per_frame?: number;
+    total_ships_detected?: number;
   };
 };
 
@@ -42,13 +45,9 @@ export default function Home() {
     setResult(null);
     setError(null);
 
-    if (mode === "image") {
-      const reader = new FileReader();
-      reader.onload = () => setPreview(reader.result as string);
-      reader.readAsDataURL(f);
-    } else {
-      setPreview(null);
-    }
+    // Создаём URL для превью (работает и для фото, и для видео)
+    const url = URL.createObjectURL(f);
+    setPreview(url);
   }
 
   async function handleSubmit() {
@@ -204,6 +203,41 @@ export default function Home() {
         </button>
       </div>
 
+      {/* Превью для фото */}
+      {preview && mode === "image" && !result && (
+        <div style={{ marginTop: 24 }}>
+          <h3>Превью:</h3>
+          <img
+            src={preview}
+            alt="preview"
+            style={{
+              maxWidth: "100%",
+              maxHeight: 400,
+              border: "1px solid #ddd",
+              borderRadius: 4,
+            }}
+          />
+        </div>
+      )}
+
+      {/* Превью для видео */}
+      {preview && mode === "video" && !result && (
+        <div style={{ marginTop: 24 }}>
+          <h3>Превью видео:</h3>
+          <video
+            src={preview}
+            controls
+            style={{
+              maxWidth: "100%",
+              maxHeight: 400,
+              border: "1px solid #ddd",
+              borderRadius: 4,
+            }}
+          />
+        </div>
+      )}
+
+      {/* Canvas с боксами (только для фото после обработки) */}
       {result && mode === "image" && result.results.ships && (
         <div style={{ marginTop: 24 }}>
           <h3>Детекция:</h3>
@@ -274,18 +308,42 @@ export default function Home() {
           {mode === "video" && (
             <>
               <p>
-                <strong>Всего кадров:</strong> {result.results.total_frames}
+                <strong>Обработано кадров:</strong>{" "}
+                {result.results.total_frames_processed}
               </p>
               <p>
                 <strong>Кадров с кораблями:</strong>{" "}
                 {result.results.frames_with_ships}
               </p>
               <p>
-                <strong>Максимум кораблей в кадре:</strong>{" "}
+                <strong>Максимум кораблей в одном кадре:</strong>{" "}
                 {result.results.max_ships_per_frame}
+              </p>
+              <p>
+                <strong>Среднее количество кораблей:</strong>{" "}
+                {result.results.avg_ships_per_frame}
+              </p>
+              <p>
+                <strong>Всего детекций:</strong>{" "}
+                {result.results.total_ships_detected}
               </p>
             </>
           )}
+
+          <details style={{ marginTop: 12 }}>
+            <summary>JSON (полный)</summary>
+            <pre
+              style={{
+                background: "#fff",
+                padding: 12,
+                border: "1px solid #ddd",
+                overflowX: "auto",
+                fontSize: 12,
+              }}
+            >
+              {JSON.stringify(result, null, 2)}
+            </pre>
+          </details>
         </div>
       )}
     </main>
