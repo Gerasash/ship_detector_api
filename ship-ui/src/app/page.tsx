@@ -38,6 +38,33 @@ export default function Home() {
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  // ✅ НОВАЯ ФУНКЦИЯ ЭКСПОРТА
+  const exportReport = async (format: "pdf" | "excel") => {
+    if (!result) return;
+
+    try {
+      const response = await fetch(`${apiBase}/export/${format}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ results: result.results }),
+      });
+
+      if (!response.ok) throw new Error("Ошибка сервера");
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `ship_detection_${format === "pdf" ? "pdf" : "xlsx"}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      setError("Ошибка экспорта: " + err.message);
+    }
+  };
+
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
@@ -45,7 +72,6 @@ export default function Home() {
     setResult(null);
     setError(null);
 
-    // Создаём URL для превью (работает и для фото, и для видео)
     const url = URL.createObjectURL(f);
     setPreview(url);
   }
@@ -266,75 +292,266 @@ export default function Home() {
         </div>
       )}
 
+      {/* ✅ ОБНОВЛЕННЫЙ БЛОК РЕЗУЛЬТАТОВ С КНОПКАМИ */}
       {result && (
         <div
           style={{
             marginTop: 24,
-            padding: 16,
-            background: "#f0f9ff",
-            border: "1px solid #0070f3",
-            borderRadius: 4,
+            padding: 24,
+            background: "linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)",
+            border: "2px solid #0070f3",
+            borderRadius: 12,
+            boxShadow: "0 10px 25px rgba(0,112,243,0.1)",
           }}
         >
-          <h2>✅ Результат</h2>
-          <p>
-            <strong>Время обработки:</strong> {result.processing_time}s
-          </p>
+          <h2
+            style={{
+              fontSize: "24px",
+              fontWeight: "bold",
+              marginBottom: 16,
+              color: "#1e40af",
+            }}
+          >
+            ✅ Результат обработки
+          </h2>
 
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "24px",
+              marginBottom: 24,
+            }}
+          >
+            <div
+              style={{
+                textAlign: "center",
+                padding: 20,
+                background: "white",
+                borderRadius: 12,
+                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "36px",
+                  fontWeight: "bold",
+                  color: "#10b981",
+                  marginBottom: 8,
+                }}
+              >
+                {result.results.total_ships}
+              </div>
+              <div style={{ color: "#6b7280", fontSize: "14px" }}>
+                Обнаружено судов
+              </div>
+            </div>
+            <div
+              style={{
+                textAlign: "center",
+                padding: 20,
+                background: "white",
+                borderRadius: 12,
+                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "28px",
+                  fontWeight: "bold",
+                  color: "#3b82f6",
+                  marginBottom: 8,
+                }}
+              >
+                {result.processing_time.toFixed(2)}s
+              </div>
+              <div style={{ color: "#6b7280", fontSize: "14px" }}>
+                Время обработки
+              </div>
+            </div>
+          </div>
+
+          {/* КНОПКИ ЭКСПОРТА */}
+          <div
+            style={{
+              display: "flex",
+              gap: 16,
+              marginBottom: 24,
+              flexWrap: "wrap",
+            }}
+          >
+            <button
+              onClick={() => exportReport("pdf")}
+              style={{
+                padding: "12px 24px",
+                background: "linear-gradient(135deg, #ef4444, #dc2626)",
+                color: "white",
+                border: "none",
+                borderRadius: 12,
+                fontSize: "16px",
+                fontWeight: "bold",
+                cursor: "pointer",
+                boxShadow: "0 4px 12px rgba(239,68,68,0.3)",
+                transition: "all 0.2s",
+              }}
+              onMouseOver={(e: any) => {
+                e.target.style.transform = "translateY(-2px)";
+                e.target.style.boxShadow = "0 8px 20px rgba(239,68,68,0.4)";
+              }}
+              onMouseOut={(e: any) => {
+                e.target.style.transform = "translateY(0)";
+                e.target.style.boxShadow = "0 4px 12px rgba(239,68,68,0.3)";
+              }}
+            >
+              📄 Скачать PDF отчет
+            </button>
+            <button
+              onClick={() => exportReport("excel")}
+              style={{
+                padding: "12px 24px",
+                background: "linear-gradient(135deg, #10b981, #059669)",
+                color: "white",
+                border: "none",
+                borderRadius: 12,
+                fontSize: "16px",
+                fontWeight: "bold",
+                cursor: "pointer",
+                boxShadow: "0 4px 12px rgba(16,185,129,0.3)",
+                transition: "all 0.2s",
+              }}
+              onMouseOver={(e: any) => {
+                e.target.style.transform = "translateY(-2px)";
+                e.target.style.boxShadow = "0 8px 20px rgba(16,185,129,0.4)";
+              }}
+              onMouseOut={(e: any) => {
+                e.target.style.transform = "translateY(0)";
+                e.target.style.boxShadow = "0 4px 12px rgba(16,185,129,0.3)";
+              }}
+            >
+              📊 Скачать Excel
+            </button>
+          </div>
+
+          {/* Детали результата */}
           {mode === "image" && (
             <>
-              <p>
+              <p style={{ marginBottom: 16 }}>
                 <strong>Кораблей обнаружено:</strong>{" "}
-                {result.results.total_ships}
+                <span
+                  style={{
+                    color: "#10b981",
+                    fontSize: "20px",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {result.results.total_ships}
+                </span>
               </p>
               {result.results.ships && result.results.ships.length > 0 && (
-                <details>
-                  <summary>
-                    Детали ({result.results.ships.length} объектов)
+                <details style={{ marginTop: 12 }}>
+                  <summary
+                    style={{
+                      cursor: "pointer",
+                      padding: 12,
+                      background: "#f3f4f6",
+                      borderRadius: 8,
+                      fontWeight: "bold",
+                    }}
+                  >
+                    Детали ({result.results.ships.length} объектов) ▼
                   </summary>
-                  <ul>
-                    {result.results.ships.map((ship, i) => (
-                      <li key={i}>
-                        {ship.class} (уверенность:{" "}
-                        {(ship.conf * 100).toFixed(1)}%)
-                      </li>
-                    ))}
-                  </ul>
+                  <div
+                    style={{
+                      marginTop: 12,
+                      padding: 16,
+                      background: "white",
+                      borderRadius: 8,
+                      border: "1px solid #e5e7eb",
+                    }}
+                  >
+                    <ul style={{ listStyle: "none", padding: 0 }}>
+                      {result.results.ships.map((ship, i) => (
+                        <li
+                          key={i}
+                          style={{
+                            padding: 8,
+                            borderBottom: "1px solid #f3f4f6",
+                          }}
+                        >
+                          <span style={{ fontWeight: "bold" }}>
+                            {ship.class}
+                          </span>
+                          <span style={{ color: "#3b82f6", marginLeft: 8 }}>
+                            {(ship.conf * 100).toFixed(1)}%
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </details>
               )}
             </>
           )}
 
           {mode === "video" && (
-            <>
-              <p>
-                <strong>Обработано кадров:</strong>{" "}
-                {result.results.total_frames_processed}
-              </p>
-              <p>
-                <strong>Кадров с кораблями:</strong>{" "}
-                {result.results.frames_with_ships}
-              </p>
-              <p>
-                <strong>Максимум кораблей в одном кадре:</strong>{" "}
-                {result.results.max_ships_per_frame}
-              </p>
-              <p>
-                <strong>Всего детекций:</strong>{" "}
-                {result.results.total_ships_detected}
-              </p>
-            </>
+            <div
+              style={{
+                background: "white",
+                padding: 16,
+                borderRadius: 8,
+                marginTop: 12,
+              }}
+            >
+              <h4 style={{ marginBottom: 12, color: "#374151" }}>
+                Статистика видео:
+              </h4>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                  gap: 12,
+                }}
+              >
+                <div>
+                  <strong>Обработано кадров:</strong>{" "}
+                  {result.results.total_frames_processed}
+                </div>
+                <div>
+                  <strong>Кадров с кораблями:</strong>{" "}
+                  {result.results.frames_with_ships}
+                </div>
+                <div>
+                  <strong>Максимум в кадре:</strong>{" "}
+                  {result.results.max_ships_per_frame}
+                </div>
+                <div>
+                  <strong>Всего детекций:</strong>{" "}
+                  {result.results.total_ships_detected}
+                </div>
+              </div>
+            </div>
           )}
 
-          <details style={{ marginTop: 12 }}>
-            <summary>JSON (полный)</summary>
+          <details style={{ marginTop: 16 }}>
+            <summary
+              style={{
+                cursor: "pointer",
+                padding: 12,
+                background: "#f3f4f6",
+                borderRadius: 8,
+              }}
+            >
+              JSON (полный) ▼
+            </summary>
             <pre
               style={{
-                background: "#fff",
-                padding: 12,
-                border: "1px solid #ddd",
+                background: "#f8fafc",
+                padding: 16,
+                borderRadius: 8,
                 overflowX: "auto",
                 fontSize: 12,
+                marginTop: 12,
+                border: "1px solid #e2e8f0",
               }}
             >
               {JSON.stringify(result, null, 2)}
